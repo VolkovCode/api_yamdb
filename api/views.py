@@ -18,6 +18,9 @@ from .serializers import (
 from .permissions import IsSuperuserPermission, IsAuthorOrReadOnlyPermission, IsSuperUser, IsAdminOrReadOnly, IsAdminOrReadOnlyOne
 from rest_framework import permissions
 from django.shortcuts import get_object_or_404
+from rest_framework.pagination import PageNumberPagination
+from .filters import TitleFilter
+
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -65,9 +68,7 @@ class UsersViewSet(viewsets.ModelViewSet):
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
-    #permission_classes = [
-    #    IsSuperuserPermission
-    #]
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['name',]
-    permission_class = (permissions.AllowAny,) 
+    permission_classes = [IsSuperUser]
+    pagination_class = PageNumberPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = TitleFilter

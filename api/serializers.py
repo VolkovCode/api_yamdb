@@ -20,20 +20,28 @@ class GenreSerializer(serializers.ModelSerializer):
         lookup_field = 'slug'
 
 
-class TitleSerializer(serializers.ModelSerializer):
-    #user = serializers.ReadOnlyField(source='user.username')
-    #following = serializers.CharField(source='following.username')
-
-    class Meta:
-        fields = ("id", "name", "year", "genre", "category", "rating", "description")
-        model = Title
-        
-
-
 class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = ("bio", "role", "username", "email")  
         model = User      
          
-        
+
+class CategoryReprField(serializers.SlugRelatedField):
+
+    def to_representation(self, value):
+        return {'name': value.name, 'slug': value.slug}
+
+
+class GenreReprField(serializers.SlugRelatedField):
+   
+    def to_representation(self, value):
+        return {'name': value.name, 'slug': value.slug}
+
+class TitleSerializer(serializers.ModelSerializer):
+    category = CategoryReprField(slug_field='slug', queryset=Category.objects.all())
+    genre = GenreReprField(slug_field='slug', queryset=Genre.objects.all(), many=True)
+
+    class Meta:
+        fields = ('id', 'name', 'year', 'rating', 'description', 'genre', 'category',)
+        model = Title           

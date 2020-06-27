@@ -23,9 +23,10 @@ class GenreSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
-        fields = ("bio", "role", "username", "email")  
+        fields = ("bio", "role", "username", "email", "first_name", "last_name")  
         model = User      
-         
+        lookup_field = 'username'
+
 
 class CategoryReprField(serializers.SlugRelatedField):
 

@@ -8,11 +8,14 @@ class User(AbstractUser):
         ("moderator", 'moderator'),
         ('admin', 'admin')
     )
-    bio = models.TextField(max_length=500, blank=True)
+    bio = models.TextField(max_length=500, blank=True, null=True)
     role = models.CharField(max_length=15, choices=STATUS_CHOICESS, default='user')
     username = models.SlugField(unique=True, blank=True, null=True)
     email = models.EmailField(unique=True)
-
+    first_name = models.CharField(max_length=200, blank=True)
+    last_name = models.CharField(max_length=200, blank=True)
+    
+            
 #class User(AbstractUser):
     #USER_ROLES = (
     #    ('user', 'user'),

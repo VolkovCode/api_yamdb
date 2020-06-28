@@ -1,32 +1,33 @@
+from django.shortcuts import get_object_or_404
+from django.db.models import Avg
+
 from rest_framework import (
-    viewsets, 
-    status, 
-    permissions, 
     filters,
-    generics
-)    
+    generics,
+    serializers,
+    status,
+    viewsets
+)
 from rest_framework.response import Response
-from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
+
 from django_filters.rest_framework import DjangoFilterBackend
 
-from .models import Genre, Title, Category, User
+from .filters import TitleFilter
+from .permissions import (
+    IsSuperUser,
+    IsAdminOrReadOnly,
+    IsAdminOrSuperUser,
+    IsAuthorOrAdminOrModerator
+)
+from .models import Genre, Title, Category, User, Review
 from .serializers import (
     CategorySerializer,
     GenreSerializer,
     TitleSerializer,
-    UserSerializer
-)  
-from .permissions import (
-    IsSuperuserPermission, 
-    IsAuthorOrReadOnlyPermission, 
-    IsSuperUser, 
-    IsAdminOrReadOnly, 
-    IsAdminOrSuperUser
-)    
-from rest_framework import permissions
-from django.shortcuts import get_object_or_404
-from rest_framework.pagination import PageNumberPagination
-from .filters import TitleFilter
+    UserSerializer,
+    ReviewSerializer
+)
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -37,14 +38,15 @@ class CategoryViewSet(viewsets.ModelViewSet):
         IsAdminOrReadOnly
     ]
     filter_backends = [filters.SearchFilter]
-    search_fields = ['name',]
+    search_fields = ['name', ]
+
     def retrieve(self, request, slug):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def partial_update(self, request, slug):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-   
+
 class GenreViewSet(viewsets.ModelViewSet):
     lookup_field = 'slug'
     queryset = Genre.objects.all()
@@ -53,8 +55,8 @@ class GenreViewSet(viewsets.ModelViewSet):
         IsAdminOrReadOnly
     ]
     filter_backends = [filters.SearchFilter]
-    search_fields = ['name',]
-    
+    search_fields = ['name', ]
+
     def retrieve(self, request, slug):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -77,7 +79,7 @@ class UserMeViewSet(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
-      
+
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
@@ -87,3 +89,32 @@ class TitleViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = TitleFilter
 
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    serializer_class = ReviewSerializer
+    permission_classes = (IsAuthorOrAdminOrModerator,)
+    pagination_class = PageNumberPagination
+
+    def get_queryset(self, *args, **kwargs):
+        title = Title.objects.get(pk=self.kwargs.get('title_id'))
+        queryset = title.reviews.all()
+        return queryset
+
+    def rating_calc(self, title):
+        reviews = Review.objects.filter(title=title)
+        rating_average = reviews.aggregate(Avg('score'))['score__avg']
+        title.rating = rating_average
+        title.save()
+
+    def perform_create(self, serializer):
+        title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
+        if Review.objects.filter(title=title,
+                                 author=self.request.user).exists():
+            raise serializers.ValidationError('Отзыв уже оставлен')
+        serializer.save(author=self.request.user, title=title)
+        self.rating_calc(title)
+
+    def perform_update(self, serializer):
+        serializer.save()
+        title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
+        self.rating_calc(title)

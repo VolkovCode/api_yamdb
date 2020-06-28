@@ -9,7 +9,8 @@ from .views import (
     GenreViewSet,
     TitleViewSet,
     UsersViewSet,
-    UserMeViewSet
+    UserMeViewSet,
+    ReviewViewSet
 )    
 from rest_framework.authtoken import views
 from rest_framework.urlpatterns import format_suffix_patterns
@@ -22,7 +23,7 @@ router.register("genres", GenreViewSet, basename="genre")
 router.register("titles", TitleViewSet, basename="title") 
 #router.register("users/me", UserMeViewSet, basename="me")
 router.register("users", UsersViewSet, basename="users")
-
+router.register(r'titles/(?P<title_id>[0-9]+)/reviews', ReviewViewSet, basename='reviews')
 
 urlpatterns = [
     path("users/me/", UserMeViewSet.as_view(), name="me"),

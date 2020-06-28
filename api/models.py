@@ -57,3 +57,10 @@ class Title(models.Model):
 
     def __str__(self):
         return self.name
+
+class Review(models.Model):
+   title = models.ForeignKey(Title, on_delete=models.CASCADE, related_name='reviews')
+   author = models.ForeignKey(User, on_delete=models.CASCADE)
+   text = models.TextField(max_length=255)
+   score = models.IntegerField(default=0)
+   pub_date = models.DateTimeField(auto_now_add=True)

@@ -1,18 +1,17 @@
 from rest_framework import serializers
 
-from .models import Category, Genre, Title, User
+from .models import Category, Genre, Title, User, Review
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    #name = serializers.CharField(source='')
 
     class Meta:
         fields = ('name', 'slug')
         model = Category
         lookup_field = 'slug'
 
+
 class GenreSerializer(serializers.ModelSerializer):
-    #author = serializers.ReadOnlyField(source='author.username')
 
     class Meta:
         fields = ('name', 'slug')
@@ -23,8 +22,10 @@ class GenreSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
-        fields = ("bio", "role", "username", "email", "first_name", "last_name")  
-        model = User      
+        fields = ("bio",
+                  "role",
+                  "username", "email", "first_name", "last_name")
+        model = User
         lookup_field = 'username'
 
 
@@ -35,14 +36,33 @@ class CategoryReprField(serializers.SlugRelatedField):
 
 
 class GenreReprField(serializers.SlugRelatedField):
-   
+
     def to_representation(self, value):
         return {'name': value.name, 'slug': value.slug}
 
+
 class TitleSerializer(serializers.ModelSerializer):
-    category = CategoryReprField(slug_field='slug', queryset=Category.objects.all())
-    genre = GenreReprField(slug_field='slug', queryset=Genre.objects.all(), many=True)
+    category = CategoryReprField(slug_field='slug',
+                                 queryset=Category.objects.all())
+    genre = GenreReprField(slug_field='slug',
+                           queryset=Genre.objects.all(),
+                           many=True)
 
     class Meta:
-        fields = ('id', 'name', 'year', 'rating', 'description', 'genre', 'category',)
-        model = Title           
+        fields = ('id',
+                  'name',
+                  'year',
+                  'rating',
+                  'description',
+                  'genre',
+                  'category',)
+        model = Title
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(slug_field='username',
+                                          read_only=True)
+
+    class Meta:
+        fields = ('id', 'text', 'author', 'score', 'pub_date',)
+        model = Review

@@ -20,13 +20,14 @@ from .permissions import (
     IsAdminOrSuperUser,
     IsAuthorOrAdminOrModerator
 )
-from .models import Genre, Title, Category, User, Review
+from .models import Genre, Title, Category, User, Review, Comment
 from .serializers import (
     CategorySerializer,
     GenreSerializer,
     TitleSerializer,
     UserSerializer,
-    ReviewSerializer
+    ReviewSerializer,
+    CommentSerializer
 )
 
 
@@ -118,3 +119,18 @@ class ReviewViewSet(viewsets.ModelViewSet):
         serializer.save()
         title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
         self.rating_calc(title)
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    serializer_class = CommentSerializer
+    permission_classes = (IsAuthorOrAdminOrModerator,)
+    pagination_class = PageNumberPagination
+
+    def get_queryset(self, *args, **kwargs):
+        review = get_object_or_404(Review, pk=self.kwargs.get('review_id'))
+        queryset = review.comments.all()
+        return queryset
+
+    def perform_create(self, serializer):
+        review = get_object_or_404(Review, pk=self.kwargs.get('review_id'))
+        serializer.save(author=self.request.user, review=review)
